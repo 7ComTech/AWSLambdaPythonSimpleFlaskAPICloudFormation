@@ -1,0 +1,597 @@
+Parameters:
+  ProjectName:
+    Description: The project name that will be prefixed to resource names
+    Type: String
+  CompanyName:
+    Description: The name of the client company
+    Type: String
+  Owner:
+    Description: The name of the owner of the resource
+    Type: String
+  ProjectType:
+    Description: The project type from API Builder
+    Type: String
+  EnvironmentName:
+    Description: Name of current environment
+    Type: String
+  VpcCIDR:
+    Description: Please enter the IP range (CIDR notation) for this VPC
+    Type: String
+  PublicSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in
+      the first Availability Zone
+    Type: String
+  PublicSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the public subnet in
+      the second Availability Zone
+    Type: String
+  PrivateSubnet1CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet
+      in the first Availability Zone
+    Type: String
+  PrivateSubnet2CIDR:
+    Description: Please enter the IP range (CIDR notation) for the private subnet
+      in the second Availability Zone
+    Type: String
+  PublicRouteDestinationCidrBlock:
+    Description: Please enter the IP range (CIDR notation) for the Public Route
+    Type: String
+  PrivateRoute1DestinationCidrBlock:
+    Description: Please enter the IP range (CIDR notation) for the Private Route 1
+    Type: String
+  PrivateRoute2DestinationCidrBlock:
+    Description: Please enter the IP range (CIDR notation) for the Private Route 2
+    Type: String
+  MemorySize:
+    Description: Memory Size for lambda function
+    Type: String
+  Timeout:
+    Description: Timeout for lambda function
+    Type: String
+  LambdaWarmUpEventsState:
+    Description: State for warm up for lambda function
+    Type: String
+    AllowedValues:
+    - ENABLED
+    - DISABLED
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock:
+        Ref: VpcCIDR
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} VPC
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} IGW
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: InternetGateway
+      VpcId:
+        Ref: VPC
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet1CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Public Subnet (AZ1)
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PublicSubnet2CIDR
+      MapPublicIpOnLaunch: true
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Public Subnet (AZ2)
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 0
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PrivateSubnet1CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Private Subnet (AZ1)
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId:
+        Ref: VPC
+      AvailabilityZone:
+        Fn::Select:
+        - 1
+        - Fn::GetAZs: ''
+      CidrBlock:
+        Ref: PrivateSubnet2CIDR
+      MapPublicIpOnLaunch: false
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Private Subnet (AZ2)
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - NatGateway1EIP
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet1
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId:
+        Fn::GetAtt:
+        - NatGateway2EIP
+        - AllocationId
+      SubnetId:
+        Ref: PublicSubnet2
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Public Routes
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  DefaultPublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      DestinationCidrBlock:
+        Ref: PublicRouteDestinationCidrBlock
+      GatewayId:
+        Ref: InternetGateway
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet1
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PublicRouteTable
+      SubnetId:
+        Ref: PublicSubnet2
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Private Routes (AZ1)
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  DefaultPrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      DestinationCidrBlock:
+        Ref: PrivateRoute1DestinationCidrBlock
+      NatGatewayId:
+        Ref: NatGateway1
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable1
+      SubnetId:
+        Ref: PrivateSubnet1
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:
+        Ref: VPC
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName} Private Routes (AZ2)
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  DefaultPrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      DestinationCidrBlock:
+        Ref: PrivateRoute2DestinationCidrBlock
+      NatGatewayId:
+        Ref: NatGateway2
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: PrivateRouteTable2
+      SubnetId:
+        Ref: PrivateSubnet2
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription:
+        Fn::Sub: Security group for ${ProjectName} application
+      VpcId:
+        Ref: VPC
+  APIRest:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name:
+        Fn::Sub: ${ProjectName}APIRest
+      Body:
+        info:
+          version: '1.0'
+          title:
+            Ref: AWS::StackName
+        paths:
+          /{proxy+}:
+            x-amazon-apigateway-any-method:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Join:
+                  - ''
+                  - - 'arn:aws:apigateway:'
+                    - Ref: AWS::Region
+                    - ':lambda:path/2015-03-31/functions/arn:aws:lambda:'
+                    - Ref: AWS::Region
+                    - ':'
+                    - Ref: AWS::AccountId
+                    - :function:${stageVariables.FunctionName}/invocations
+              responses: {}
+        swagger: '2.0'
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName}APIRest
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+  APIDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:
+      RestApiId:
+        Ref: APIRest
+  APIStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName:
+        Fn::Sub: ${EnvironmentName}
+      DeploymentId:
+        Ref: APIDeployment
+      RestApiId:
+        Ref: APIRest
+      Variables:
+        FunctionName:
+          Fn::Sub: ${ProjectName}LambdaFunction
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName}  API Stage
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+      - Key: Environment
+        Value:
+          Fn::Sub: ${EnvironmentName}
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName:
+        Fn::Sub: ${ProjectName}LambdaFunction
+      Runtime: python3.8
+      MemorySize:
+        Fn::Sub: ${MemorySize}
+      Timeout:
+        Fn::Sub: ${Timeout}
+      Code: ../LambdaFunction
+      Handler: app.lambda_handler
+      Role:
+        Fn::GetAtt:
+        - IAMRole
+        - Arn
+      VpcConfig:
+        SecurityGroupIds:
+        - Ref: SecurityGroup
+        SubnetIds:
+        - Ref: PrivateSubnet1
+        - Ref: PrivateSubnet2
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName}LambdaFunction
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+      - Key: Environment
+        Value:
+          Fn::Sub: ${EnvironmentName}
+      Layers:
+      - Ref: DependenciesLayer
+  DependenciesLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName:
+        Fn::Sub: ${ProjectName}DependenciesLayer
+      Description: Layer containing all the project dependencies
+      Content: ../DependenciesLayer
+      CompatibleRuntimes:
+      - python3.8
+  LambdaWarmUpEventsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression: rate(5 minutes)
+      State:
+        Ref: LambdaWarmUpEventsState
+      Targets:
+      - Id:
+          Fn::Sub: ${ProjectName}LambdaWarmUP
+        Arn:
+          Fn::GetAtt:
+          - LambdaFunction
+          - Arn
+  LambdaPermissionWarmUp:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName:
+        Ref: LambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn:
+        Fn::GetAtt:
+        - LambdaWarmUpEventsRule
+        - Arn
+  LambdaPermissionAPIGateway:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      FunctionName:
+        Ref: LambdaFunction
+      SourceArn:
+        Fn::Sub: arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${APIRest}/${APIStage}/*/*
+  IAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Description:
+        Fn::Sub: IAM role for ${ProjectName} application
+      RoleName:
+        Fn::Sub: ${ProjectName}IamRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+      - arn:aws:iam::aws:policy/AmazonAPIGatewayAdministrator
+      - arn:aws:iam::aws:policy/AWSLambda_FullAccess
+      - arn:aws:iam::aws:policy/SecretsManagerReadWrite
+      Tags:
+      - Key: Name
+        Value:
+          Fn::Sub: ${ProjectName}IamRole
+      - Key: ProjectName
+        Value:
+          Fn::Sub: ${ProjectName}
+      - Key: CompanyName
+        Value:
+          Fn::Sub: ${CompanyName}
+      - Key: Owner
+        Value:
+          Fn::Sub: ${Owner}
+      - Key: ProjectType
+        Value:
+          Fn::Sub: ${ProjectType}
+      - Key: Environment
+        Value:
+          Fn::Sub: ${EnvironmentName}
+      Policies:
+      - PolicyName:
+          Fn::Sub: ${ProjectName}-cloudwatch-disable
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Deny
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            Resource:
+            - arn:aws:logs:*:*:*
+Outputs:
+  APIOutput:
+    Description: API Gateway endpoint URL for current stage
+    Value:
+      Fn::Sub: https://${APIRest}.execute-api.${AWS::Region}.amazonaws.com/${EnvironmentName}/teste
